@@ -1,34 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define MAX_TAIKHOAN 100
-#define MAX_GIAODICH 100
-#define TEN_FILE "data.bin"
-
-/* ==================== 1. CAU TRUC DU LIEU ==================== */
-typedef struct {
-    char loai[20];          /* "Nap", "Rut", "Chuyen", "Nhan" */
-    double soTien;
-} GiaoDich;
-
-typedef struct {
-    char soTK[15];                  /* So tai khoan (tu dong sinh: 10000001, 10000002...) */
-    char hoTen[50];                 /* Ho va ten chu tai khoan */
-    double soDu;                    /* So du tai khoan */
-    GiaoDich lichSu[MAX_GIAODICH];  /* Mang luu lich su 100 giao dich */
-    int soGiaoDich;                 /* So luong giao dich da thuc hien */
-} TaiKhoan;
-
-/* Mang 1 chieu luu danh sach tai khoan va bien dem so luong */
-TaiKhoan dsTaiKhoan[MAX_TAIKHOAN];
+#include "config.c"
+#include "tinh_lai_kep.c"
 int soLuongTK = 0;
 
 /* ==================== CAC HAM PHU TRO ==================== */
 
-/* Nhap chuoi an toan: xoa bo dem + fgets + xoa dau Enter '\n' */
+/* Nhap chuoi: fgets + xoa dau Enter '\n' o cuoi chuoi */
 void nhapChuoi(char chuoi[], int kichThuoc) {
-    fflush(stdin);
     fgets(chuoi, kichThuoc, stdin);
     chuoi[strcspn(chuoi, "\n")] = 0;
 }
@@ -107,7 +87,7 @@ void xoaTaiKhoan() {
 
     int vt = timViTriTK(stkGoi);
     if (vt == -1) {
-        printf("Loi: Khong tim thay tai khoan %s!\n", stkGoi);
+        printf("Khong tim thay tai khoan %s!\n", stkGoi);
         return;
     }
 
@@ -163,11 +143,13 @@ void giaoDich() {
     printf("Khach hang: %s | So du hien co: %.2lf VND\n", dsTaiKhoan[vt].hoTen, dsTaiKhoan[vt].soDu);
     printf("  1. Nap tien\n  2. Rut tien\n  3. Chuyen khoan\nChon (1-3): ");
     scanf("%d", &loai);
+    xoaBoDem();
 
-    if (loai == 1) {
+    if (loai == NAP_TIEN) {
         /* --- NAP TIEN --- */
         printf("Nhap so tien muon nap: ");
         scanf("%lf", &soTien);
+        xoaBoDem();
         if (soTien <= 0) {
             printf("Loi: So tien phai lon hon 0!\n");
             return;
@@ -176,10 +158,11 @@ void giaoDich() {
         luuLichSu(vt, "Nap", soTien);
         printf("=> Nap thanh cong! So du moi: %.2lf VND\n", dsTaiKhoan[vt].soDu);
 
-    } else if (loai == 2) {
+    } else if (loai == RUT_TIEN) {
         /* --- RUT TIEN --- */
         printf("Nhap so tien muon rut: ");
         scanf("%lf", &soTien);
+        xoaBoDem();
         if (soTien <= 0) {
             printf("Loi: So tien phai lon hon 0!\n");
             return;
@@ -192,7 +175,7 @@ void giaoDich() {
         luuLichSu(vt, "Rut", soTien);
         printf("=> Rut thanh cong! So du con lai: %.2lf VND\n", dsTaiKhoan[vt].soDu);
 
-    } else if (loai == 3) {
+    } else if (loai == CHUYEN_KHOAN) {
         /* --- CHUYEN KHOAN --- */
         char stkNhan[15];
         printf("Nhap so TK nguoi nhan: ");
@@ -211,6 +194,7 @@ void giaoDich() {
 
         printf("Nguoi nhan: %s | Nhap so tien chuyen: ", dsTaiKhoan[vtNhan].hoTen);
         scanf("%lf", &soTien);
+        xoaBoDem();
         if (soTien <= 0) {
             printf("Loi: So tien phai lon hon 0!\n");
             return;
@@ -263,14 +247,6 @@ void inThongTin() {
     printf("=====================================================\n");
 }
 
-/* CHUC NANG 6: Ham de quy tinh lai kep P * (1 + r)^n */
-double tinhLaiKep(double P, double r, int n) {
-    if (n == 0) {
-        return P; /* Dieu kien dung de quy */
-    }
-    return tinhLaiKep(P * (1 + r), r, n - 1); /* Goi de quy cho ky tiep theo */
-}
-
 void tinhLaiTietKiem() {
     char stkGoi[15];
     double r;
@@ -294,8 +270,10 @@ void tinhLaiTietKiem() {
     printf("Tien goc hien co (P): %.2lf VND\n", dsTaiKhoan[vt].soDu);
     printf("Nhap lai suat 1 ky (r, vi du 0.05 la 5%%): ");
     scanf("%lf", &r);
+    xoaBoDem();
     printf("Nhap so ky han gui (n): ");
     scanf("%d", &n);
+    xoaBoDem();
 
     if (r < 0 || n < 0) {
         printf("Loi: Lai suat va ky han khong duoc am!\n");
@@ -383,10 +361,10 @@ int main() {
         printf("=======================================\n");
         printf("Moi ban chon (0-7): ");
 
-        fflush(stdin);
         if (scanf("%d", &chon) != 1) {
             chon = -1;
         }
+        xoaBoDem();
 
         switch (chon) {
             case 1: themTaiKhoan(); break;
