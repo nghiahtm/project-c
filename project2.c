@@ -384,7 +384,9 @@ int main() {
         printf("Moi ban chon (0-7): ");
 
         fflush(stdin);
-        if (scanf("%d", &chon) != 1) {
+        int kq = scanf("%d", &chon);
+        if (kq == EOF) break;
+        if (kq != 1) {
             chon = -1;
         }
 
