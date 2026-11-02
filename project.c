@@ -3,7 +3,7 @@
 ///Mở tài khoản; gửi/rút/chuyển khoản; ghi lịch sử giao dịch; tính lãi tiết kiệm theo kỳ hạn; tra cứu số dư; lưu/đọc file.	
 ///struct TaiKhoan liên kết danh sách GiaoDich; 
 ///đệ quy: tính lãi kép qua các kỳ hạn.
-#include "account_management.c";
+#include "account_management.c"
 
 
 int main() {

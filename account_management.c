@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "enum.c";
-
+#include "enum.c"
+#include "data_file.c"
 #define MAX 100
 #define account_file "data/accounts.txt"
 
+FILE *file;
 // Thêm vào file dữ liệu tài khoản khách hàng
 void add_tk(struct TaiKhoan *tk);
 // Xoá tài khoản
@@ -25,12 +26,6 @@ void xoa_underline(char *str) {
 
 
 void add_tk(struct TaiKhoan *tk) {
-    /// Mở file để ghi nối tiếp vào cuối a+
-    FILE *file = fopen(account_file, "a+");
-    if(file == NULL){
-        printf("Khong the mo file de ghi!\n");
-        return;
-    }
     printf("Nhap ten: ");
     fgets(tk->ten, sizeof(tk->ten), stdin);
     xoa_underline(tk->ten);
@@ -38,8 +33,10 @@ void add_tk(struct TaiKhoan *tk) {
     fgets(tk->soTk, sizeof(tk->soTk), stdin);
     xoa_underline(tk->soTk);
     tk->soDu = 50000;
-    fprintf(file, "%s,%s,%d\n", tk->ten, tk->soTk, tk->soDu);
-    fclose(file);
+    
+    char data[512];
+    sprintf(data, "%s,%s,%d\n", tk->ten, tk->soTk, tk->soDu);
+    addData(file, account_file, data);
 }
 ///TODO remove
 void remove_tk(struct TaiKhoan *tk,int index){
@@ -49,26 +46,21 @@ void remove_tk(struct TaiKhoan *tk,int index){
 void infor_tk(struct TaiKhoan *tk,char soTk[50]){}
 
 void infor_list_tk(struct TaiKhoan *tk) {
-    FILE *file = fopen(account_file, "r");
-    if(file == NULL){
-        printf("Khong the mo file de doc!\n");
-        return;
-    }
-    char line[256];
+    
+    char *data = getData(file, account_file);
+    if(data == NULL) return;
     int n = 0;
 
-    while ( n < MAX && fgets(line, sizeof(line), file) != NULL) {
-        char *ten = strtok(line, ",");
-        char *soTk = strtok(NULL, ",");
-        char *soDu = strtok(NULL, ",\n");
-
-        tk[n].soDu = atoi(soDu);
-        strcpy(tk[n].ten, ten);
-        strcpy(tk[n].soTk, soTk);
-        printf("Họ tên chủ thẻ: %s\n, Số tài khoản: %s\n, Số dư: %d\n", tk[n].ten, tk[n].soTk, tk[n].soDu);
-        printf("--------------------------------------------------\n");
-        n++;
+    // Tách từng dòng, mỗi dòng có dạng: ten,soTk,soDu
+    char *line = strtok(data, "\n");
+    while (n < MAX && line != NULL) {
+        if(sscanf(line, "%49[^,],%19[^,],%d", tk[n].ten, tk[n].soTk, &tk[n].soDu) == 3) {
+            printf("Ho ten chu the: %s, So tai khoan: %s, So du: %d\n", tk[n].ten, tk[n].soTk, tk[n].soDu);
+            printf("--------------------------------------------------\n");
+            n++;
+        }
+        line = strtok(NULL, "\n");
     }
-    
-    fclose(file);
+
+    free(data);
 }
