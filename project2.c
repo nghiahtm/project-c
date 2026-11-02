@@ -6,34 +6,33 @@
 #define MAX_GIAODICH 100
 #define DATA_FILE "data.bin"
 
-/* ==================== 1. CAU TRUC DU LIEU ==================== */
+/* ==================== 1. CAU TRUC DU LIEU CHUAN DE BAI ==================== */
 typedef struct {
     char loai[20];      /* "Nap", "Rut", "Chuyen", "Nhan" */
     double soTien;
 } GiaoDich;
 
 typedef struct TaiKhoan {
-    char soTK[15];          /* He thong tu dong sinh (VD: 1000000001, 1000000002...) */
-    char soIC[15];          /* Nguoi dung nhap: So CCCD / CMND */
-    char hoTen[50];         /* Nguoi dung nhap: Ho va ten chu tai khoan */
-    double soDu;            /* So du hien tai cua tai khoan */
-    GiaoDich lichSu[MAX_GIAODICH]; /* Mang luu lich su cac giao dich */
-    int soGiaoDich;         /* So luong giao dich da thuc hien */
-    struct TaiKhoan *next;  /* Con tro toi node tiep theo (DSLK don duy nhat) */
+    char soTK[15];          /* He thong tu dong sinh (VD: 10000001, 10000002...) */
+    char hoTen[50];         /* Nguoi dung nhap: Ho va ten */
+    double soDu;            /* So du khoi tao = 0.0 */
+    GiaoDich lichSu[100];   /* Mang 100 giao dich */
+    int soGiaoDich;         /* So giao dich khoi tao = 0 */
+    struct TaiKhoan *next;  /* Con tro toi node ke tiep (DSLK don) */
 } TaiKhoan;
 
-/* Con tro dau danh sach lien ket quan ly cac tai khoan */
+/* Con tro quan ly danh sach lien ket don */
 TaiKhoan *dsTaiKhoan = NULL;
 
 /* ==================== CAC HAM TIEN ICH ==================== */
 
-/* Xoa bo dem ban phim khi nhap sai du lieu */
+/* Xoa toan bo ky tu con lai trong dong dem ban phim */
 void xoaBoDem(void) {
     int c;
     while ((c = getchar()) != '\n' && c != EOF) { }
 }
 
-/* Nhap chuoi an toan: fflush + fgets + strcspn xoa '\n' */
+/* Nhap chuoi an toan: fflush + fgets + strcspn xoa '\n' theo dung de bai */
 void nhapChuoi(char *dest, int size) {
     fflush(stdin);
     if (fgets(dest, size, stdin) != NULL) {
@@ -41,7 +40,7 @@ void nhapChuoi(char *dest, int size) {
     }
 }
 
-/* Tim tai khoan theo So Tai Khoan (STK) */
+/* Tim tai khoan theo So Tai Khoan (STK), tra ve con tro hoac NULL */
 TaiKhoan *timTaiKhoan(const char *stk) {
     TaiKhoan *cur = dsTaiKhoan;
     while (cur != NULL) {
@@ -53,34 +52,23 @@ TaiKhoan *timTaiKhoan(const char *stk) {
     return NULL;
 }
 
-/* Tim tai khoan theo So CCCD/IC */
-TaiKhoan *timTaiKhoanTheoIC(const char *ic) {
-    TaiKhoan *cur = dsTaiKhoan;
-    while (cur != NULL) {
-        if (strcmp(cur->soIC, ic) == 0) {
-            return cur;
-        }
-        cur = cur->next;
-    }
-    return NULL;
-}
-
 /* 
- * Ham tu dong sinh So Tai Khoan duy nhat (Auto-generate Account Number):
- * Bat dau tu 1000000001 (10 chu so chuan ngan hang).
- * Duyet qua danh sach tim so lon nhat va tang them 1, khong bao gio trung lap.
+ * Ham tu dong sinh So Tai Khoan (Auto-generate STK):
+ * Khoi tao tu 10000001 (8 chu so).
+ * Duyet qua danh sach tim STK lon nhat hien tai roi cong 1.
+ * Dam bao STK tang dan deu va KHONG BAO GIO TRUNG LAP.
  */
 void sinhSoTaiKhoan(char *dest) {
-    long long maxVal = 1000000000LL;
+    long maxVal = 10000000L;
     TaiKhoan *cur = dsTaiKhoan;
     while (cur != NULL) {
-        long long val = atoll(cur->soTK);
+        long val = atol(cur->soTK);
         if (val > maxVal) {
             maxVal = val;
         }
         cur = cur->next;
     }
-    sprintf(dest, "%lld", maxVal + 1);
+    sprintf(dest, "%ld", maxVal + 1);
 }
 
 /* Nhap so tien hop le (> 0) */
@@ -88,7 +76,7 @@ int nhapSoTien(const char *thongBao, double *soTien) {
     printf("%s", thongBao);
     if (scanf("%lf", soTien) != 1) {
         xoaBoDem();
-        printf("Loi: So tien khong hop le.\n");
+        printf("Loi: So tien nhap vao khong hop le.\n");
         return 0;
     }
     xoaBoDem();
@@ -99,7 +87,7 @@ int nhapSoTien(const char *thongBao, double *soTien) {
     return 1;
 }
 
-/* Ghi nhan 1 giao dich vao lich su */
+/* Ghi nhan 1 giao dich vao mang lich su */
 int ghiGiaoDich(TaiKhoan *tk, const char *loai, double soTien) {
     if (tk->soGiaoDich >= MAX_GIAODICH) {
         printf("Canh bao: Lich su giao dich cua TK %s da day (%d)!\n", tk->soTK, MAX_GIAODICH);
@@ -114,65 +102,46 @@ int ghiGiaoDich(TaiKhoan *tk, const char *loai, double soTien) {
 /* ==================== 7 CHUC NANG CHINH ==================== */
 
 /* 
- * HAM 1: Mo tai khoan moi
- * - Khach hang chi can nhap So CCCD/IC va Ho ten.
- * - He thong tu dong sinh So TK (STK) khong trung lap.
- * - So du khoi tao = 0.00, soGiaoDich = 0.
+ * HAM 1: Them tai khoan moi (soDu = 0, soGiaoDich = 0)
+ * Nguoi dung chi can nhap Ho ten.
+ * He thong tu dong sinh So TK duy nhat.
  */
 void themTaiKhoan(void) {
-    char icNhap[15];
-    printf("\n--- 1. MO TAI KHOAN NGAN HANG MOI ---\n");
-    printf("Nhap so CCCD/IC: ");
-    nhapChuoi(icNhap, sizeof(icNhap));
-
-    if (strlen(icNhap) == 0) {
-        printf("Loi: So CCCD/IC khong duoc de trong!\n");
-        return;
-    }
-
-    /* Kiem tra xem so CCCD/IC nay da dang ky tai khoan chua */
-    if (timTaiKhoanTheoIC(icNhap) != NULL) {
-        printf("Loi: So CCCD/IC [%s] da duoc dang ky tren he thong!\n", icNhap);
-        return;
-    }
-
     TaiKhoan *node = (TaiKhoan *)malloc(sizeof(TaiKhoan));
     if (node == NULL) {
         printf("Loi: Khong du bo nho RAM de cap phat!\n");
         return;
     }
 
-    strcpy(node->soIC, icNhap);
-
+    printf("\n--- 1. MO TAI KHOAN NGAN HANG MOI ---\n");
     printf("Nhap ho va ten chu tai khoan: ");
     nhapChuoi(node->hoTen, sizeof(node->hoTen));
+
     if (strlen(node->hoTen) == 0) {
         printf("Loi: Ho ten khong duoc de trong!\n");
         free(node);
         return;
     }
 
-    /* He thong tu dong sinh So Tai Khoan */
+    /* He thong tu dong cap so tai khoan */
     sinhSoTaiKhoan(node->soTK);
-
     node->soDu = 0.0;
     node->soGiaoDich = 0;
 
-    /* Chen node vao dau danh sach lien ket */
+    /* Chen vao dau danh sach lien ket */
     node->next = dsTaiKhoan;
     dsTaiKhoan = node;
 
-    printf("\n>>> DANG KY TAI KHOAN THANH CONG! <<<\n");
+    printf("\n>>> MO TAI KHOAN THANH CONG! <<<\n");
     printf("  + Chu tai khoan : %s\n", node->hoTen);
-    printf("  + So CCCD/IC    : %s\n", node->soIC);
-    printf("  + SO TAI KHOAN  : %s (He thong tu dong cap)\n", node->soTK);
+    printf("  + SO TAI KHOAN  : %s (He thong tu dong sinh)\n", node->soTK);
     printf("  + So du ban dau : 0.00 VND\n");
 }
 
-/* HAM 2: Xoa tai khoan theo STK (hoac CCCD) */
+/* HAM 2: Xoa tai khoan theo STK */
 void xoaTaiKhoan(void) {
     char stkGoi[15];
-    printf("\n--- 2. DONG / XOA TAI KHOAN ---\n");
+    printf("\n--- 2. DONG / XOA TAI KHOAN THEO STK ---\n");
     printf("Nhap so TK can xoa: ");
     nhapChuoi(stkGoi, sizeof(stkGoi));
 
@@ -200,15 +169,15 @@ void xoaTaiKhoan(void) {
         prev->next = cur->next;
     }
 
-    printf("=> Da dong va xoa tai khoan [%s] cua chu TK [%s]!\n", cur->soTK, cur->hoTen);
+    printf("=> Da dong va giai phong bo nho cho tai khoan [%s] cua [%s]!\n", cur->soTK, cur->hoTen);
     free(cur);
 }
 
-/* HAM 3: Sua ho ten chu tai khoan theo STK */
+/* HAM 3: Sua ho ten theo STK */
 void suaHoTen(void) {
     char stkGoi[15];
-    printf("\n--- 3. CAP NHAT HO TEN THEO STK ---\n");
-    printf("Nhap so TK can sua: ");
+    printf("\n--- 3. SUA HO TEN CHU TAI KHOAN ---\n");
+    printf("Nhap so TK can sua ho ten: ");
     nhapChuoi(stkGoi, sizeof(stkGoi));
 
     TaiKhoan *cur = timTaiKhoan(stkGoi);
@@ -217,9 +186,8 @@ void suaHoTen(void) {
         return;
     }
 
-    printf("So CCCD/IC     : %s\n", cur->soIC);
-    printf("Ho ten hien tai: %s\n", cur->hoTen);
-    printf("Nhap ho ten moi: ");
+    printf("Ho ten hien tai : %s\n", cur->hoTen);
+    printf("Nhap ho ten moi : ");
     nhapChuoi(cur->hoTen, sizeof(cur->hoTen));
     printf("=> Da cap nhat ho ten moi thanh cong cho TK [%s]!\n", cur->soTK);
 }
@@ -282,7 +250,7 @@ void chuyenKhoan(TaiKhoan *src) {
         return;
     }
 
-    /* Thuc hien tru/cong tien */
+    /* Thuc hien tru va cong tien */
     src->soDu -= soTien;
     dst->soDu += soTien;
 
@@ -290,7 +258,7 @@ void chuyenKhoan(TaiKhoan *src) {
     ghiGiaoDich(src, "Chuyen", soTien);
     ghiGiaoDich(dst, "Nhan", soTien);
 
-    printf("=> Chuyen khoan thanh cong den: [%s - %s]!\n", dst->soTK, dst->hoTen);
+    printf("=> Chuyen khoan thanh cong den [%s - %s]!\n", dst->soTK, dst->hoTen);
     printf("   So du moi cua ban [%s]: %.2lf VND\n", src->soTK, src->soDu);
 }
 
@@ -327,21 +295,16 @@ void giaoDich(void) {
     }
 }
 
-/* HAM 5: Tra cuu thong tin 1 tai khoan va lich su giao dich */
+/* HAM 5: In thong tin 1 tai khoan va toan bo lich su giao dich */
 void inThongTin(void) {
-    char tuKhoa[15];
-    printf("\n--- 5. TRA CUU THONG TIN & LICH SU GIAO DICH ---\n");
-    printf("Nhap So TK hoac So CCCD/IC: ");
-    nhapChuoi(tuKhoa, sizeof(tuKhoa));
+    char stkGoi[15];
+    printf("\n--- 5. IN THONG TIN TAI KHOAN & LICH SU GIAO DICH ---\n");
+    printf("Nhap so TK can tra cuu: ");
+    nhapChuoi(stkGoi, sizeof(stkGoi));
 
-    /* Ho tro tim theo ca STK hoac CCCD */
-    TaiKhoan *tk = timTaiKhoan(tuKhoa);
+    TaiKhoan *tk = timTaiKhoan(stkGoi);
     if (tk == NULL) {
-        tk = timTaiKhoanTheoIC(tuKhoa);
-    }
-
-    if (tk == NULL) {
-        printf("Loi: Khong tim thay tai khoan voi thong tin [%s]!\n", tuKhoa);
+        printf("Loi: Khong tim thay tai khoan [%s]!\n", stkGoi);
         return;
     }
 
@@ -349,7 +312,6 @@ void inThongTin(void) {
     printf("       THONG TIN CHI TIET TAI KHOAN         \n");
     printf("============================================\n");
     printf("So tai khoan : %s\n", tk->soTK);
-    printf("So CCCD/IC   : %s\n", tk->soIC);
     printf("Chu tai khoan: %s\n", tk->hoTen);
     printf("So du hien co: %.2lf VND\n", tk->soDu);
     printf("Tong so GD   : %d\n", tk->soGiaoDich);
@@ -484,9 +446,9 @@ void docFile(void) {
     printf("=> Da tai thanh cong %d tai khoan tu tep [%s]!\n", count, DATA_FILE);
 }
 
-/* ==================== BUBBLE SORT & IN BANG ==================== */
+/* ==================== BUBBLE SORT & IN DANH SACH ==================== */
 
-/* Hoan doi du lieu data giua 2 node (giu nguyen con tro next) */
+/* Hoan doi noi dung data giua 2 node (giu nguyen con tro next) */
 void hoanViData(TaiKhoan *a, TaiKhoan *b) {
     TaiKhoan temp = *a;
     TaiKhoan *nextA = a->next;
@@ -530,26 +492,26 @@ void inDanhSachTatCa(void) {
         return;
     }
 
-    printf("\n========================================================================================\n");
-    printf("%-5s | %-12s | %-15s | %-25s | %18s\n", "STT", "So TK", "So CCCD/IC", "Chu tai khoan", "So du (VND)");
-    printf("========================================================================================\n");
+    printf("\n========================================================================\n");
+    printf("%-5s | %-15s | %-30s | %18s\n", "STT", "So TK", "Chu tai khoan", "So du (VND)");
+    printf("========================================================================\n");
     int i = 1;
     for (TaiKhoan *cur = dsTaiKhoan; cur != NULL; cur = cur->next) {
-        printf("%-5d | %-12s | %-15s | %-25s | %18.2lf\n",
-               i++, cur->soTK, cur->soIC, cur->hoTen, cur->soDu);
+        printf("%-5d | %-15s | %-30s | %18.2lf\n",
+               i++, cur->soTK, cur->hoTen, cur->soDu);
     }
-    printf("========================================================================================\n");
+    printf("========================================================================\n");
 }
 
 /* ==================== MENU CONSOLE & MAIN ==================== */
 
 void hienThiMenu(void) {
     printf("\n================ MENU QUAN LY NGAN HANG ================\n");
-    printf("  1. Mo tai khoan moi (Nhap CCCD + Ho ten, tu sinh STK)\n");
+    printf("  1. Mo tai khoan moi (Chi nhap Ho ten, he thong tu sinh STK)\n");
     printf("  2. Xoa / Dong tai khoan theo So TK\n");
-    printf("  3. Cap nhat ho ten chu tai khoan\n");
+    printf("  3. Sua ho ten chu tai khoan theo So TK\n");
     printf("  4. Giao dich (Nap / Rut / Chuyen khoan)\n");
-    printf("  5. Tra cuu thong tin & lich su giao dich\n");
+    printf("  5. In thong tin tai khoan & lich su giao dich\n");
     printf("  6. Tinh lai kep gui tiet kiem (Ham de quy)\n");
     printf("  7. Sap xep tai khoan theo So TK (Bubble Sort)\n");
     printf("  8. In danh sach tat ca tai khoan\n");
@@ -559,7 +521,7 @@ void hienThiMenu(void) {
 }
 
 int main(void) {
-    /* Tu dong doc du lieu cu khi vua khoi dong */
+    /* Tu dong doc du lieu cu khi khoi dong chuong trinh */
     docFile();
 
     int luaChon;
@@ -567,7 +529,7 @@ int main(void) {
         hienThiMenu();
         int kq = scanf("%d", &luaChon);
         if (kq == EOF) {
-            break; /* Ctrl+Z hoac het luong nhap */
+            break; /* Nguoi dung nhan Ctrl+Z hoac het luong nhap */
         }
         if (kq != 1) {
             xoaBoDem();
@@ -597,16 +559,16 @@ int main(void) {
         }
     } while (luaChon != 0);
 
-    /* Tu dong luu danh sach vao file data.bin truoc khi dong chuong trinh */
+    /* Tu dong luu danh sach vao tep data.bin truoc khi ket thuc */
     luuFile();
 
-    /* Giai phong bo nho dong RAM */
+    /* Giai phong bo nho dong cua danh sach lien ket */
     while (dsTaiKhoan != NULL) {
         TaiKhoan *tmp = dsTaiKhoan;
         dsTaiKhoan = dsTaiKhoan->next;
         free(tmp);
     }
 
-    printf("Chuong trinh da ket thuc. Cam on ban!\n");
+    printf("Chuong trinh da ket thuc. Tam biet ban!\n");
     return 0;
 }
