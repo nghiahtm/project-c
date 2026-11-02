@@ -1,3 +1,6 @@
+#ifndef CONFIG_C
+#define CONFIG_C
+
 #define MAX_TAIKHOAN 100
 #define MAX_GIAODICH 100
 #define TEN_FILE "data.bin"
@@ -21,11 +24,16 @@ typedef enum {
     CHUYEN_KHOAN = 3
 } LoaiGiaoDich;
 
-/* Mang 1 chieu luu danh sach tai khoan va bien dem so luong */
-TaiKhoan dsTaiKhoan[MAX_TAIKHOAN];
 
 /* Xoa phan con sot lai tren dong nhap (vd: dau Enter '\n' ma scanf de lai) */
 void xoaBoDem() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
+
+/* Mang 1 chieu luu danh sach tai khoan va bien dem so luong */
+TaiKhoan dsTaiKhoan[MAX_TAIKHOAN];
+int soLuongTK = 0;
+
+#endif
+
