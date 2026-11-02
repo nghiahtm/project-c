@@ -461,28 +461,22 @@ void hoanViData(TaiKhoan *a, TaiKhoan *b) {
     b->next = nextB;
 }
 
-/* Sap xep Bubble Sort theo So TK tang dan */
+/* Sap xep danh sach tang dan theo So TK (Dung 2 vong for long nhau de hieu) */
 void sapXepTaiKhoan(void) {
     if (dsTaiKhoan == NULL || dsTaiKhoan->next == NULL) {
         printf("Danh sach co it hon 2 tai khoan, khong can sap xep.\n");
         return;
     }
 
-    int swapped;
-    TaiKhoan *ptr;
-    do {
-        swapped = 0;
-        ptr = dsTaiKhoan;
-        while (ptr->next != NULL) {
-            if (strcmp(ptr->soTK, ptr->next->soTK) > 0) {
-                hoanViData(ptr, ptr->next);
-                swapped = 1;
+    for (TaiKhoan *p = dsTaiKhoan; p != NULL; p = p->next) {
+        for (TaiKhoan *q = p->next; q != NULL; q = q->next) {
+            if (strcmp(p->soTK, q->soTK) > 0) {
+                hoanViData(p, q);
             }
-            ptr = ptr->next;
         }
-    } while (swapped);
+    }
 
-    printf("=> Da sap xep danh sach tang dan theo So TK bang Bubble Sort!\n");
+    printf("=> Da sap xep danh sach tang dan theo So TK thanh cong!\n");
 }
 
 /* In toan bo danh sach tai khoan ra bang */
