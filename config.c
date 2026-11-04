@@ -35,5 +35,11 @@ void xoaBoDem() {
 TaiKhoan dsTaiKhoan[MAX_TAIKHOAN];
 int soLuongTK = 0;
 
+void sortTK(TaiKhoan *tk1, TaiKhoan *tk2) {
+    if (strcmp(tk1->soTK , tk2->soTK) > 0) {
+        TaiKhoan tam = *tk1; 
+        *tk1 = *tk2;
+        *tk2 = tam;
+    }
+  }
 #endif
-

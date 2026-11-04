@@ -195,11 +195,8 @@ void sapXepVaInDanhSach() {
     /* Sap xep mang tang dan theo So TK bang 2 vong for co ban */
     for (int i = 0; i < soLuongTK - 1; i++) {
         for (int j = i + 1; j < soLuongTK; j++) {
-            if (strcmp(dsTaiKhoan[i].soTK, dsTaiKhoan[j].soTK) > 0) {
-                TaiKhoan tam = dsTaiKhoan[i];
-                dsTaiKhoan[i] = dsTaiKhoan[j];
-                dsTaiKhoan[j] = tam;
-            }
+            sortTK(&dsTaiKhoan[i],&dsTaiKhoan[j]);
+        
         }
     }
 
